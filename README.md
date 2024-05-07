@@ -1,2 +1,0 @@
-# takednote
-TakedNote
