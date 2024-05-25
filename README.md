@@ -1,2 +1,2 @@
 # TakedNote
-TakedNote adalah aplikasi Text Editor yang dibuat dengan python.
+TakedNote adalah aplikasi Note Taking yang dibuat dengan python.
