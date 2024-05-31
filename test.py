@@ -1,121 +1,124 @@
+import json
 import tkinter as tk
 from tkinter import messagebox
-import json
 
-# Fungsi untuk memuat data dari file JSON
-def load_data_from_json(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            data = json.load(file)
-            return data["notes"]
-    except FileNotFoundError:
-        messagebox.showerror("Error", "File not found.")
-        return []
-    except json.JSONDecodeError:
-        messagebox.showerror("Error", "Error decoding JSON.")
-        return []
+# Asumsi variabel global
+current_id = None
+current_index_listbox = None
+datanotes = []
 
-# Fungsi untuk menyimpan data ke file JSON
-def save_data_to_json(file_path, notes):
-    try:
-        with open(file_path, 'w') as file:
-            json.dump({"notes": notes}, file, indent=4)
-    except Exception as e:
-        messagebox.showerror("Error", f"Error saving to JSON: {e}")
-
-# Fungsi untuk mengisi listbox dengan data
-def populate_listbox(listbox, notes):
-    listbox.delete(0, tk.END)
-    for note in notes:
-        listbox.insert(tk.END, note["title"])
-
-# Event handler untuk klik pada item listbox
-def on_listbox_select(event):
-    try:
-        selected_index = listbox.curselection()  # Mendapatkan indeks item yang dipilih
-        if selected_index:
-            index = selected_index[0]
-            selected_note = notes[index]
-            entry_title.delete(0, tk.END)  # Hapus teks yang ada di Entry
-            entry_title.insert(0, selected_note["title"])  # Masukkan judul yang dipilih ke Entry
-            entry_content.delete(1.0, tk.END)  # Hapus teks yang ada di Text
-            entry_content.insert(tk.END, selected_note["noteContent"])  # Masukkan konten yang dipilih ke Text
-            current_selection.set(index)  # Simpan indeks item yang dipilih
-    except IndexError:
-        messagebox.showerror("Error", "Selected index is out of range.")
-
-# Fungsi untuk mengganti judul dan konten dari item yang dipilih dan menyimpan perubahan ke JSON
-def update_note():
-    try:
-        index = current_selection.get()
-        if index is not None and index < len(notes):
-            new_title = entry_title.get()
-            new_content = entry_content.get(1.0, tk.END).strip()
-            notes[index]["title"] = new_title
-            notes[index]["noteContent"] = new_content
-            populate_listbox(listbox, notes)
-            listbox.select_set(index)
-            save_data_to_json(file_path, notes)  # Simpan perubahan ke file JSON
-            messagebox.showinfo("Success", "Note updated and saved to JSON successfully.")
-        else:
-            messagebox.showerror("Error", "No item selected or index out of range.")
-    except IndexError:
-        messagebox.showerror("Error", "Error updating note, index out of range.")
-
-# Fungsi untuk menghapus item yang dipilih dan menyimpan perubahan ke JSON
-def delete_note():
-    try:
-        index = current_selection.get()
-        if index is not None and index < len(notes):
-            del notes[index]
-            populate_listbox(listbox, notes)
-            entry_title.delete(0, tk.END)
-            entry_content.delete(1.0, tk.END)
-            save_data_to_json(file_path, notes)  # Simpan perubahan ke file JSON
-            current_selection.set(None)
-            messagebox.showinfo("Success", "Note deleted and changes saved to JSON successfully.")
-        else:
-            messagebox.showerror("Error", "No item selected or index out of range.")
-    except IndexError:
-        messagebox.showerror("Error", "Error deleting note, index out of range.")
-
-# Buat instance Tkinter
+# Inisialisasi tkinter
 root = tk.Tk()
-root.title("Listbox from JSON")
+root.geometry("400x300")
 
-# Buat listbox
-listbox = tk.Listbox(root, width=50, height=15)
-listbox.pack(pady=10)
+# Inisialisasi Listbox
+listbox = tk.Listbox(root)
+listbox.pack(fill=tk.BOTH, expand=True)
 
-# Muat data dari file JSON
-file_path = 'notes.json'
-notes = load_data_from_json(file_path)
+# Buat Menu Bar
+menubar = tk.Menu(root)
+root.config(menu=menubar)
 
-# Isi listbox dengan data yang dimuat
-populate_listbox(listbox, notes)
+# Buat Menu "File"
+file_menu = tk.Menu(menubar, tearoff=0)
+menubar.add_cascade(label="File", menu=file_menu)
 
-# Hubungkan event handler ke listbox
-listbox.bind('<<ListboxSelect>>', on_listbox_select)
+# Tambah item menu "Delete Note"
+file_menu.add_command(label="Delete Note", command=lambda: delete_note(), state=tk.DISABLED)
 
-# Buat Entry untuk mengganti judul
-entry_title = tk.Entry(root, width=50)
-entry_title.pack(pady=10)
+def update_menu_state():
+    # Perbarui state item menu berdasarkan current_id
+    if current_id is not None:
+        file_menu.entryconfig("Delete Note", state=tk.NORMAL)
+    else:
+        file_menu.entryconfig("Delete Note", state=tk.DISABLED)
 
-# Buat Text untuk mengganti konten catatan
-entry_content = tk.Text(root, width=50, height=10)
-entry_content.pack(pady=10)
+def load_note(title, content):
+    # Fungsi ini harus diimplementasikan
+    pass
 
-# Buat tombol untuk mengganti judul dan konten
-button_update = tk.Button(root, text="Update Note", command=update_note)
-button_update.pack(pady=5)
+def new_note():
+    global current_id, current_index_listbox, datanotes
+    randomID = random.randint(1, 10000)
+    
+    # Insert new item into the listbox
+    listbox.select_clear(0, tk.END)
+    listbox.insert(tk.END, "Add Title..")
+    
+    last_index = listbox.size() - 1
+    listbox.select_set(last_index)
+    selected_index = listbox.curselection()
+    
+    if selected_index:
+        index = selected_index[0]
+        
+        # Check if index is valid in datanotes
+        if index >= len(datanotes):
+            # Add a new note to datanotes if it does not exist
+            datanotes.append({"id": randomID, "title": "Add Title..", "noteContent": ""})
+        else:
+            # Update the existing note in datanotes
+            selected_note = datanotes[index]
+            selected_note["id"] = randomID
+            selected_note["title"] = "Add Title.."
+            selected_note["noteContent"] = ""
+        
+        # Save notes to file
+        with open('notes.json', 'w') as file:
+            json.dump({"notes": datanotes}, file, indent=4)
+        
+        # Update globals
+        current_id = randomID
+        current_index_listbox = index
+        load_note("Add Title..", "")
+        update_menu_state()
 
-# Buat tombol untuk menghapus item
-button_delete = tk.Button(root, text="Delete Note", command=delete_note)
-button_delete.pack(pady=5)
+def delete_note():
+    global current_index_listbox, current_id, datanotes
+    
+    current_selection = listbox.curselection()
+    
+    if current_selection:
+        current_index = current_selection[0]
+        
+        if current_index < len(datanotes):
+            # Menampilkan kotak pesan konfirmasi
+            confirm = messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this note?")
+            if confirm:
+                del datanotes[current_index]
 
-# Variable untuk menyimpan indeks item yang dipilih
-current_selection = tk.IntVar()
-current_selection.set(None)
+                with open('notes.json', 'w') as file:
+                    json.dump({"notes": datanotes}, file, indent=4)
 
-# Jalankan aplikasi Tkinter
+                listbox.delete(current_index)
+                
+                # Pilih item sebelumnya jika memungkinkan, atau item berikutnya jika item pertama dihapus
+                if listbox.size() > 0:
+                    if current_index > 0:
+                        new_index = current_index - 1
+                    else:
+                        new_index = 0
+                    listbox.select_set(new_index)
+                    listbox.see(new_index)
+                    
+                    selected_note = datanotes[new_index]
+                    note_id = selected_note["id"]
+                    note_title = selected_note["title"]
+                    note_content = selected_note["noteContent"]
+                    load_note(note_title, note_content)
+                    
+                    current_id = note_id
+                    current_index_listbox = new_index
+                else:
+                    # Penanganan kasus saat listbox kosong
+                    current_id = None
+                    current_index_listbox = None
+                    load_note("", "")
+                update_menu_state()
+
+# Contoh penggunaan
+# Bind new_note ke tombol
+root.bind('<Control-n>', lambda event: new_note())
+
+# Start main loop
 root.mainloop()
